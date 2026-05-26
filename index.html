@@ -1,0 +1,197 @@
+<!--
+    Copyright (C) <2026>  <Karsten Wong>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+    license: GPL-3.0-or-later
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Test - Browser Version</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app" class="container">
+        <!-- Module Selection Screen -->
+        <div id="moduleSelect" class="screen active">
+            <h1>Auto Test</h1>
+            <p>Select a test module to load:</p>
+            <div id="moduleList" class="module-list">
+                <!-- Dynamically populated with available modules -->
+            </div>
+            <div class="button-group">
+                <button id="loadCustomModule" class="btn btn-secondary">Load Custom Module (JSON)</button>
+                <button id="createNewModule" class="btn btn-secondary">Create Test</button>
+            </div>
+        </div>
+
+        <!-- Test Creator Screen -->
+        <div id="testCreator" class="screen">
+            <h1>Create/Edit Test</h1>
+            
+            <div class="creator-form">
+                <div class="form-group">
+                    <label for="moduleNameInput">Test Module Name:</label>
+                    <input type="text" id="moduleNameInput" placeholder="e.g., French Vocab" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="vocabModeToggle">
+                        Vocab Mode (auto-reverse Q&A pairs)
+                    </label>
+                </div>
+
+                <!-- Section Management -->
+                <div class="section-manager">
+                    <h3>Sections & Vocabulary</h3>
+                    <div id="sectionsContainer" class="sections-container">
+                        <!-- Sections and vocab will be rendered as a scrolling list -->
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <div class="creator-settings">
+                    <h3>Test Settings</h3>
+                    <div class="form-group">
+                        <label for="creatorNumQuestions">Number of Questions in Test:</label>
+                        <input type="number" id="creatorNumQuestions" min="1" value="5" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="creatorRandomOrder">
+                            Randomize question order?
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Save/Export -->
+                <div class="button-group">
+                    <button id="saveTestModule" class="btn btn-primary">Save & Download JSON</button>
+                    <button id="backFromCreator" class="btn btn-secondary">Back</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Selection Screen -->
+        <div id="sectionSelect" class="screen">
+            <h1>Select Sections</h1>
+            <p id="sectionInfo"></p>
+            <div id="sectionList" class="section-list">
+                <!-- Checkboxes for sections will be populated here -->
+            </div>
+            <div class="button-group">
+                <button id="startTest" class="btn btn-primary">Start Test</button>
+                <button id="backToModules" class="btn btn-secondary">Back</button>
+            </div>
+        </div>
+
+        <!-- Test Settings Screen -->
+        <div id="testSettings" class="screen">
+            <h1>Test Settings</h1>
+            <div class="settings-form">
+                <div class="form-group">
+                    <label for="numQuestions">Number of Questions (out of <span id="totalQuestions">0</span>):</label>
+                    <input type="number" id="numQuestions" min="1">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="randomOrder">
+                        Randomize question order?
+                    </label>
+                </div>
+            </div>
+            <div class="button-group">
+                <button id="confirmSettings" class="btn btn-primary">Begin Test</button>
+                <button id="backToSections" class="btn btn-secondary">Back</button>
+            </div>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz" class="screen">
+            <div class="quiz-header">
+                <div class="progress-info">
+                    <span>Question <span id="currentQuestion">0</span> of <span id="totalTestQuestions">0</span></span>
+                    <span>Score: <span id="score">0</span></span>
+                </div>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+            </div>
+            
+            <div class="quiz-content">
+                <div id="questionText" class="question-text"></div>
+                <div id="languageSelector" class="language-selector"></div>
+                <div id="charPicker" class="char-picker"></div>
+                <input type="text" id="answerInput" class="answer-input" placeholder="Type your answer here..." autocomplete="off">
+            </div>
+
+            <div class="button-group">
+                <button id="submitAnswer" class="btn btn-primary">Submit Answer</button>
+            </div>
+
+            <div id="feedback" class="feedback"></div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results" class="screen">
+            <h1>Test Complete!</h1>
+            <div class="results-content">
+                <div class="final-score">Final Score: <span id="finalScore">0</span></div>
+                <p id="redemptionMessage"></p>
+                <div class="results-summary">
+                    <h2>Answer Summary</h2>
+                    <div id="summaryStats"></div>
+                    <div id="summaryList" class="summary-list"></div>
+                </div>
+            </div>
+            <div id="redemptionContainer" style="display: none;">
+                <h2>Redemption Round</h2>
+                <p>You missed some questions. Try again:</p>
+                <div id="redemptionQuiz" class="quiz-content">
+                    <div id="redemptionQuestion" class="question-text"></div>
+                    <div id="redemptionLanguageSelector" class="language-selector"></div>
+                    <div id="redemptionCharPicker" class="char-picker"></div>
+                    <input type="text" id="redemptionAnswer" class="answer-input" placeholder="Type your answer here..." autocomplete="off">
+                </div>
+                <div class="button-group">
+                    <button id="submitRedemption" class="btn btn-primary">Submit Answer</button>
+                </div>
+                <div id="redemptionFeedback" class="feedback"></div>
+            </div>
+            <div class="button-group">
+                <button id="restartTest" class="btn btn-primary">Start New Test</button>
+            </div>
+        </div>
+
+        <!-- File Upload for Custom Module -->
+        <div id="fileUploadModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Load Custom Test Module</h2>
+                <p>Upload a JSON file with your test data:</p>
+                <input type="file" id="jsonFileInput" accept=".json">
+                <p class="info-text">Expected format: { "settings": {...}, "question_dict": {...} }</p>
+                <button id="uploadFile" class="btn btn-primary">Load Module</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

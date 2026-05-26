@@ -1,0 +1,46 @@
+{
+  "name": "Auto-Tester---Browser",
+  "version": "1.0.0",
+  "_license": "GPL-3.0-or-later",
+
+  "settings": {
+    "ask_no_qs_in_test": true,
+    "no_qs_in_test": 5,
+    "ask_random": true,
+    "random": false,
+    "ask_sections": true,
+    "sections": []
+  },
+  "question_dict": {
+    "Basic Vocabulary": [
+      {
+        "question": "What is the capital of France?",
+        "answer": "Paris"
+      },
+      {
+        "question": "What is 2 + 2?",
+        "answer": "4"
+      },
+      {
+        "question": "How do you say hello in Spanish?",
+        "answer": "Hola"
+      }
+    ],
+    "Advanced Topics": [
+      {
+        "question": "What is the chemical symbol for gold?",
+        "answer": "Au"
+      },
+      {
+        "question": "Who wrote Romeo and Juliet?",
+        "answer": "Shakespeare"
+      }
+    ]
+  },
+  "check_ans_function": {
+    "description": "Optional custom answer checking function",
+    "example": "function(userAnswer) { return userAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim(); }",
+    "notes": "If provided, this function will be used instead of the default case-insensitive comparison. The function receives the user's answer as input."
+  }
+}
+

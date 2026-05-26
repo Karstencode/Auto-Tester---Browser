@@ -1,5 +1,21 @@
-# Auto-Tester---Browser
-My first Github repo! A local, Quizlet-like browser-based test maker and tester. No internet needed! 
+<!--
+    Copyright (C) <2026>  <Karsten Wong>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+    license: GPL-3.0-or-later
+-->
 
 # Auto Test - Browser Version
 
@@ -138,6 +154,7 @@ The `name` field is optional and used for display in the module list.
 - `quizlet_import.py` — Python tool to convert Quizlet text to JSON
 - `sample_module.json` — example JSON format reference
 - `README.md` — this file 
+- `license.txt` — GNU General Public License 3.0 full text
 
 ## Browser Compatibility
 
