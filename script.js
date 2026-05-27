@@ -1464,27 +1464,32 @@ function buildTestJSON() {
     
     const question_dict = {};
     
-    // Add regular sections
+    // Collect all valid sections first
+    const validSections = [];
     creatorSections.forEach(section => {
         const validPairs = section.qaPairs.filter(pair => pair.question.trim() !== '' && pair.answer.trim() !== '');
         if (validPairs.length > 0) {
-            settings.sections.push(section.name);
-            question_dict[section.name] = validPairs.map(pair => ({
-                question: pair.question,
-                answer: pair.answer
-            }));
-            
-            // Add reversed section if vocab mode
-            if (vocabMode) {
-                const reversedName = `${section.name} (Reversed)`;
-                settings.sections.push(reversedName);
-                question_dict[reversedName] = validPairs.map(pair => ({
-                    question: pair.answer,
-                    answer: pair.question
-                }));
-            }
+            validSections.push({ name: section.name, pairs: validPairs });
         }
     });
+    
+    // Add all original sections
+    validSections.forEach(({ name, pairs }) => {
+        settings.sections.push(name);
+        question_dict[name] = pairs.map(pair => ({ question: pair.question, answer: pair.answer }));
+    });
+    
+    // Add all reversed sections after all originals
+    if (vocabMode) {
+        validSections.forEach(({ name, pairs }) => {
+            const reversedName = `${name} (Reversed)`;
+            settings.sections.push(reversedName);
+            question_dict[reversedName] = pairs.map(pair => ({
+                question: pair.answer,
+                answer: pair.question
+            }));
+        });
+    }
     
     return {
         name: moduleName,
