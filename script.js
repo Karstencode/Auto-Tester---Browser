@@ -251,18 +251,31 @@ function beginAddQuestion() {
         }
     });
 
+    function commitAdd() {
+        const q = qInput.value.trim();
+        const a = aInput.value.trim();
+        if (!q || !a) return;
+        addNewQuestionInline(activeSectionName, q, a);
+        form.remove();
+        beginAddQuestion();
+    }
+
     const form = document.createElement('div');
     form.className = 'inline-qa-form';
     form.innerHTML = `
-        <input type="text" class="inline-qa-question" placeholder="Question...">
-        <input type="text" class="inline-qa-answer" placeholder="Answer...">
-        <button class="btn-inline-save">Save</button>
-        <button class="btn-inline-cancel">Cancel</button>
+        <input type="text" class="inline-qa-question" placeholder="Question..." spellcheck="false">
+        <input type="text" class="inline-qa-answer" placeholder="Answer..." spellcheck="false">
+        <button class="btn-inline-qa-close" title="Close">✕</button>
     `;
 
-    // Insert form right after the section header (before existing questions)
+    // Insert form right after the permanent buttons (before existing questions)
     if (headerNode) {
-        headerNode.parentNode.insertBefore(form, headerNode.nextSibling);
+        const permControls = headerNode.nextSibling;
+        if (permControls && permControls.classList.contains('permanent')) {
+            headerNode.parentNode.insertBefore(form, permControls.nextSibling);
+        } else {
+            headerNode.parentNode.insertBefore(form, headerNode.nextSibling);
+        }
     } else {
         container.appendChild(form);
     }
@@ -271,17 +284,16 @@ function beginAddQuestion() {
     const aInput = form.querySelector('.inline-qa-answer');
     qInput.focus();
 
-    form.querySelector('.btn-inline-save').onclick = () => {
-        const q = qInput.value.trim();
-        const a = aInput.value.trim();
-        addNewQuestionInline(activeSectionName, q, a);
-        form.remove();
-    };
+    qInput.addEventListener('blur', commitAdd);
+    aInput.addEventListener('blur', commitAdd);
+    qInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); if (qInput.value.trim()) aInput.focus(); }
+    });
+    aInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); commitAdd(); }
+    });
 
-    form.querySelector('.btn-inline-cancel').onclick = () => form.remove();
-
-    qInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') form.querySelector('.btn-inline-save').click(); });
-    aInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') form.querySelector('.btn-inline-save').click(); });
+    form.querySelector('.btn-inline-qa-close').onclick = () => form.remove();
 }
 
 function addNewQuestionInline(sectionName, question, answer) {
@@ -892,7 +904,7 @@ function initializeTestCreator(moduleData = null, moduleName = '', placeInCustom
     renderSections();
 
     if (!moduleData) {
-        beginAddQuestion();
+        renderSections();
     }
 
 }
@@ -990,68 +1002,6 @@ function clearQAInput() {
     updateCurrentSectionDisplay();
 }
 
-function editQAPair(sectionName, index) {
-    const container = document.getElementById('sectionsContainer');
-    const section = creatorSections.find(s => s.name === sectionName);
-    if (!section || !section.qaPairs[index]) return;
-
-    // find header node
-    let headerNode = null;
-    Array.from(container.children).forEach(node => {
-        if (node.classList && node.classList.contains('creator-section-header') && !node.classList.contains('reversed')) {
-            const title = node.querySelector('.section-name-input, .section-name-text');
-            if (title) {
-                const value = title.value ?? title.textContent;
-                if (value === sectionName) headerNode = node;
-            }
-        }
-    });
-    if (!headerNode) return;
-
-    // locate the target vocab row
-    let count = 0;
-    let node = headerNode.nextSibling;
-    let targetNode = null;
-    while (node && !(node.classList && node.classList.contains('creator-section-header'))) {
-        if (node.classList && node.classList.contains('creator-vocab-row')) {
-            if (count === index) { targetNode = node; break; }
-            count++;
-        }
-        node = node.nextSibling;
-    }
-    if (!targetNode) return;
-
-    const pair = section.qaPairs[index];
-    const form = document.createElement('div');
-    form.className = 'inline-qa-form';
-    form.innerHTML = `
-        <input type="text" class="inline-qa-question" value="${escapeHtml(pair.question)}">
-        <input type="text" class="inline-qa-answer" value="${escapeHtml(pair.answer)}">
-        <button class="btn-inline-save">Save</button>
-        <button class="btn-inline-cancel">Cancel</button>
-    `;
-
-    targetNode.parentNode.insertBefore(form, targetNode);
-    targetNode.style.display = 'none';
-
-    const qInput = form.querySelector('.inline-qa-question');
-    const aInput = form.querySelector('.inline-qa-answer');
-
-    form.querySelector('.btn-inline-save').onclick = () => {
-        const q = qInput.value.trim();
-        const a = aInput.value.trim();
-        if (!q) { alert('Please enter a question'); return; }
-        if (!a) { alert('Please enter an answer'); return; }
-        section.qaPairs[index] = { question: q, answer: a };
-        renderSections();
-    };
-
-    form.querySelector('.btn-inline-cancel').onclick = () => {
-        form.remove();
-        targetNode.style.display = '';
-    };
-}
-
 function insertQAPair(sectionName, index) {
     const container = document.getElementById('sectionsContainer');
     const section = creatorSections.find(s => s.name === sectionName);
@@ -1078,20 +1028,25 @@ function insertQAPair(sectionName, index) {
         node = node.nextSibling;
     }
 
+    function commitInsert() {
+        const q = qInput.value.trim();
+        const a = aInput.value.trim();
+        if (!q || !a) return;
+        section.qaPairs.splice(index, 0, { question: q, answer: a });
+        renderSections();
+    }
+
     const form = document.createElement('div');
     form.className = 'inline-qa-form';
     form.innerHTML = `
-        <input type="text" class="inline-qa-question" placeholder="Question...">
-        <input type="text" class="inline-qa-answer" placeholder="Answer...">
-        <button class="btn-inline-save">Save</button>
-        <button class="btn-inline-cancel">Cancel</button>
+        <input type="text" class="inline-qa-question" placeholder="Question..." spellcheck="false">
+        <input type="text" class="inline-qa-answer" placeholder="Answer..." spellcheck="false">
+        <button class="btn-inline-qa-close" title="Close">✕</button>
     `;
 
     if (insertBeforeNode) {
         insertBeforeNode.parentNode.insertBefore(form, insertBeforeNode);
     } else {
-        // Find the next section header (reversed or next real section)
-        // and insert before it, so the form doesn't end up under the reversed section
         let nextHeader = headerNode.nextSibling;
         while (nextHeader && !(nextHeader.classList && nextHeader.classList.contains('creator-section-header'))) {
             nextHeader = nextHeader.nextSibling;
@@ -1107,16 +1062,16 @@ function insertQAPair(sectionName, index) {
     const aInput = form.querySelector('.inline-qa-answer');
     qInput.focus();
 
-    form.querySelector('.btn-inline-save').onclick = () => {
-        const q = qInput.value.trim();
-        const a = aInput.value.trim();
-        if (!q) { alert('Please enter a question'); return; }
-        if (!a) { alert('Please enter an answer'); return; }
-        section.qaPairs.splice(index, 0, { question: q, answer: a });
-        renderSections();
-    };
+    qInput.addEventListener('blur', commitInsert);
+    aInput.addEventListener('blur', commitInsert);
+    qInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); if (qInput.value.trim()) aInput.focus(); }
+    });
+    aInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); commitInsert(); }
+    });
 
-    form.querySelector('.btn-inline-cancel').onclick = () => form.remove();
+    form.querySelector('.btn-inline-qa-close').onclick = () => form.remove();
 }
 
 function insertSectionPrompt(beforeIndex) {
@@ -1335,28 +1290,83 @@ function renderSections() {
         section.qaPairs.forEach((pair, pairIdx) => {
             const vocabRow = document.createElement('div');
             vocabRow.className = 'creator-vocab-row';
-            if (section.reversedOf) vocabRow.classList.add('reversed');
+            if (section.reversedOf) {
+                vocabRow.classList.add('reversed');
+                vocabRow.dataset.reversedFrom = section.reversedOf;
+                vocabRow.dataset.pairIndex = pairIdx;
+            }
             if (!section.reversedOf) {
                 vocabRow.draggable = true;
                 vocabRow.dataset.sectionName = section.name;
                 vocabRow.dataset.pairIndex = pairIdx;
                 vocabRow.dataset.originalSection = section.reversedOf || section.name;
             }
-            const question = document.createElement('div');
-            question.className = 'vocab-question';
-            question.textContent = pair.question;
-            const answer = document.createElement('div');
-            answer.className = 'vocab-answer';
-            answer.textContent = pair.answer;
+
+            function syncReversed() {
+                const revRows = document.querySelectorAll(
+                    `.creator-vocab-row.reversed[data-reversed-from="${section.name}"][data-pair-index="${pairIdx}"]`
+                );
+                const sec = creatorSections.find(s => s.name === section.name);
+                if (!sec || !sec.qaPairs[pairIdx]) return;
+                revRows.forEach(row => {
+                    const rq = row.querySelector('.vocab-question');
+                    const ra = row.querySelector('.vocab-answer');
+                    if (rq) rq.value = sec.qaPairs[pairIdx].answer;
+                    if (ra) ra.value = sec.qaPairs[pairIdx].question;
+                });
+            }
+
+            function savePair() {
+                const secName = section.name;
+                const idx = pairIdx;
+                const sec = creatorSections.find(s => s.name === secName);
+                if (sec && sec.qaPairs[idx]) {
+                    sec.qaPairs[idx].question = questionInput.value.trim();
+                    sec.qaPairs[idx].answer = answerInput.value.trim();
+                }
+            }
+
+            function onLiveInput() {
+                const sec = creatorSections.find(s => s.name === section.name);
+                if (!sec || !sec.qaPairs[pairIdx]) return;
+                sec.qaPairs[pairIdx].question = questionInput.value;
+                sec.qaPairs[pairIdx].answer = answerInput.value;
+                syncReversed();
+            }
+
+            const questionInput = document.createElement('input');
+            questionInput.type = 'text';
+            questionInput.className = 'vocab-question';
+            questionInput.value = pair.question;
+            questionInput.placeholder = 'Question';
+            questionInput.dataset.sectionName = section.name;
+            questionInput.dataset.pairIndex = pairIdx;
+            if (!section.reversedOf) {
+                questionInput.addEventListener('input', onLiveInput);
+                questionInput.addEventListener('blur', savePair);
+            }
+            questionInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); savePair(); answerInput.focus(); }
+            });
+
+            const answerInput = document.createElement('input');
+            answerInput.type = 'text';
+            answerInput.className = 'vocab-answer';
+            answerInput.value = pair.answer;
+            answerInput.placeholder = 'Answer';
+            answerInput.dataset.sectionName = section.name;
+            answerInput.dataset.pairIndex = pairIdx;
+            if (!section.reversedOf) {
+                answerInput.addEventListener('input', onLiveInput);
+                answerInput.addEventListener('blur', savePair);
+            }
+            answerInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); savePair(); questionInput.focus(); }
+            });
+
             const controls = document.createElement('div');
             controls.className = 'vocab-controls';
             if (!section.reversedOf) {
-                const editBtn = document.createElement('button');
-                editBtn.className = 'btn-vocab-edit';
-                editBtn.textContent = 'Edit';
-                editBtn.dataset.sectionName = section.name;
-                editBtn.dataset.pairIndex = pairIdx;
-                controls.appendChild(editBtn);
                 const delBtn = document.createElement('button');
                 delBtn.className = 'btn-vocab-delete';
                 delBtn.textContent = '✕';
@@ -1365,8 +1375,8 @@ function renderSections() {
                 delBtn.dataset.pairIndex = pairIdx;
                 controls.appendChild(delBtn);
             }
-            vocabRow.appendChild(question);
-            vocabRow.appendChild(answer);
+            vocabRow.appendChild(questionInput);
+            vocabRow.appendChild(answerInput);
             vocabRow.appendChild(controls);
             container.appendChild(vocabRow);
 
@@ -1420,11 +1430,6 @@ function handleContainerClick(e) {
         const sectionName = e.target.dataset.sectionName;
         const pairIndex = parseInt(e.target.dataset.pairIndex);
         removeQAPair(sectionName, pairIndex);
-    } else if (e.target.classList.contains('btn-vocab-edit')) {
-        e.stopPropagation();
-        const sectionName = e.target.dataset.sectionName;
-        const pairIndex = parseInt(e.target.dataset.pairIndex);
-        editQAPair(sectionName, pairIndex);
     } else if (e.target.classList.contains('btn-insert-row')) {
         e.stopPropagation();
         const action = e.target.dataset.action;
