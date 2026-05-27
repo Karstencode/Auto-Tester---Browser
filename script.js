@@ -1092,8 +1092,21 @@ function insertQAPair(sectionName, index) {
         <button class="btn-inline-cancel">Cancel</button>
     `;
 
-    if (insertBeforeNode) insertBeforeNode.parentNode.insertBefore(form, insertBeforeNode);
-    else container.appendChild(form);
+    if (insertBeforeNode) {
+        insertBeforeNode.parentNode.insertBefore(form, insertBeforeNode);
+    } else {
+        // Find the next section header (reversed or next real section)
+        // and insert before it, so the form doesn't end up under the reversed section
+        let nextHeader = headerNode.nextSibling;
+        while (nextHeader && !(nextHeader.classList && nextHeader.classList.contains('creator-section-header'))) {
+            nextHeader = nextHeader.nextSibling;
+        }
+        if (nextHeader) {
+            nextHeader.parentNode.insertBefore(form, nextHeader);
+        } else {
+            container.appendChild(form);
+        }
+    }
 
     const qInput = form.querySelector('.inline-qa-question');
     const aInput = form.querySelector('.inline-qa-answer');
@@ -1191,16 +1204,24 @@ function isVocabModeEnabled() {
 
 function getDisplaySections() {
     const display = [];
-    creatorSections.forEach(section => {
-        display.push({ ...section, reversedOf: null });
-        if (isVocabModeEnabled()) {
+    if (isVocabModeEnabled()) {
+        // All original sections first
+        creatorSections.forEach(section => {
+            display.push({ ...section, reversedOf: null });
+        });
+        // Then all reversed sections in the same order
+        creatorSections.forEach(section => {
             display.push({
                 name: `${section.name} (Reversed)`,
                 qaPairs: section.qaPairs.map(pair => ({ question: pair.answer, answer: pair.question })),
                 reversedOf: section.name
             });
-        }
-    });
+        });
+    } else {
+        creatorSections.forEach(section => {
+            display.push({ ...section, reversedOf: null });
+        });
+    }
     return display;
 }
 
