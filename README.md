@@ -163,10 +163,8 @@ Chrome/Chromium (recommended), Firefox, Safari, Edge — any modern browser with
 
 
 ## TODO:
-
-1. Change question order in `Create/Edit test` page by dragging
-2. Show questions which are incorrect in the first round but correct in the second in `Summary` page (currently indicated as correct)
-3. Add more question types such as mutli-choice (currently achievable by typing `'A, B, C, D'` and specifying options on the question)
+1. Show questions which are incorrect in the first round but correct in the second in `Summary` page (currently indicated as correct)
+2. Add more question types such as mutli-choice (currently achievable by typing `'A, B, C, D'` and specifying options on the question)
 
 ## Final remarks
 Made partly with Github copilot and partly with OpenCode AI

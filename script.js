@@ -38,6 +38,7 @@ let qaInsertSection = null;
 let activeSectionName = null;
 let isProcessingAnswer = false;
 let isProcessingRedemption = false;
+let dragState = null;
 
 // Special characters for different languages
 const specialChars = {
@@ -259,15 +260,9 @@ function beginAddQuestion() {
         <button class="btn-inline-cancel">Cancel</button>
     `;
 
-    // Insert form after the last element of this section
+    // Insert form right after the section header (before existing questions)
     if (headerNode) {
-        let insertAfter = headerNode;
-        let next = headerNode.nextSibling;
-        while (next && !(next.classList && next.classList.contains('creator-section-header'))) {
-            insertAfter = next;
-            next = next.nextSibling;
-        }
-        insertAfter.parentNode.insertBefore(form, insertAfter.nextSibling);
+        headerNode.parentNode.insertBefore(form, headerNode.nextSibling);
     } else {
         container.appendChild(form);
     }
@@ -294,7 +289,7 @@ function addNewQuestionInline(sectionName, question, answer) {
     if (!answer) { alert('Please enter an answer'); return; }
     const section = creatorSections.find(s => s.name === sectionName);
     if (!section) { alert('Section not found'); return; }
-    section.qaPairs.push({ question, answer });
+    section.qaPairs.unshift({ question, answer });
     renderSections();
 }
 
@@ -1258,6 +1253,11 @@ function renderSections() {
         if (section.reversedOf) {
             sectionHeaderRow.classList.add('reversed');
         }
+        if (!section.reversedOf) {
+            sectionHeaderRow.draggable = true;
+            sectionHeaderRow.dataset.sectionName = section.name;
+            sectionHeaderRow.dataset.dragType = 'section';
+        }
 
         let sectionTitle;
         if (section.reversedOf) {
@@ -1312,6 +1312,7 @@ function renderSections() {
         if (!section.reversedOf) {
             const headerInlineControls = document.createElement('div');
             headerInlineControls.className = 'insert-separator permanent';
+            headerInlineControls.dataset.sectionName = section.name;
             const headerInsertQBtn = document.createElement('button');
             headerInsertQBtn.className = 'btn-insert-row';
             headerInsertQBtn.textContent = '+ Insert Question';
@@ -1335,6 +1336,12 @@ function renderSections() {
             const vocabRow = document.createElement('div');
             vocabRow.className = 'creator-vocab-row';
             if (section.reversedOf) vocabRow.classList.add('reversed');
+            if (!section.reversedOf) {
+                vocabRow.draggable = true;
+                vocabRow.dataset.sectionName = section.name;
+                vocabRow.dataset.pairIndex = pairIdx;
+                vocabRow.dataset.originalSection = section.reversedOf || section.name;
+            }
             const question = document.createElement('div');
             question.className = 'vocab-question';
             question.textContent = pair.question;
@@ -1390,6 +1397,18 @@ function renderSections() {
     // Attach single event listener for all buttons
     container.removeEventListener('click', handleContainerClick);
     container.addEventListener('click', handleContainerClick);
+
+    // Drag-and-drop event listeners
+    container.removeEventListener('dragstart', handleDragStart);
+    container.removeEventListener('dragover', handleDragOver);
+    container.removeEventListener('dragleave', handleDragLeave);
+    container.removeEventListener('drop', handleDrop);
+    container.removeEventListener('dragend', handleDragEnd);
+    container.addEventListener('dragstart', handleDragStart);
+    container.addEventListener('dragover', handleDragOver);
+    container.addEventListener('dragleave', handleDragLeave);
+    container.addEventListener('drop', handleDrop);
+    container.addEventListener('dragend', handleDragEnd);
 }
 function handleContainerClick(e) {
     if (e.target.classList.contains('btn-remove-section')) {
@@ -1423,6 +1442,166 @@ function handleContainerClick(e) {
             }
         }
     }
+}
+
+// ============================================
+// DRAG-AND-DROP HANDLERS
+// ============================================
+
+function handleDragStart(e) {
+    if (e.target.closest('button, input, select, textarea, .btn-insert-row, .btn-vocab-edit, .btn-vocab-delete, .btn-remove-section')) return;
+
+    syncSectionNamesFromInputs();
+
+    const row = e.target.closest('.creator-vocab-row:not(.reversed)');
+    const header = e.target.closest('.creator-section-header:not(.reversed)');
+
+    if (row) {
+        dragState = {
+            type: 'question',
+            sectionName: row.dataset.sectionName,
+            pairIndex: parseInt(row.dataset.pairIndex),
+            element: row
+        };
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', 'drag');
+        row.classList.add('dragging');
+    } else if (header) {
+        const section = creatorSections.find(s => s.name === header.dataset.sectionName);
+        if (!section) return;
+        dragState = {
+            type: 'section',
+            sectionIndex: creatorSections.indexOf(section),
+            element: header
+        };
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', 'drag');
+        header.classList.add('dragging');
+    }
+}
+
+function handleDragOver(e) {
+    const row = e.target.closest('.creator-vocab-row:not(.reversed)');
+    const header = e.target.closest('.creator-section-header:not(.reversed)');
+    const sep = e.target.closest('.insert-separator');
+
+    if (!dragState) return;
+    e.preventDefault();
+
+    // Remove existing indicators
+    document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+
+    if (dragState.type === 'question') {
+        if (row) {
+            e.preventDefault();
+            const rect = row.getBoundingClientRect();
+            const y = e.clientY - rect.top;
+            if (y < rect.height / 2) {
+                row.classList.add('drag-over', 'drag-over-top');
+                dragState.dropTarget = { sectionName: row.dataset.sectionName, pairIndex: parseInt(row.dataset.pairIndex), position: 'before' };
+            } else {
+                row.classList.add('drag-over', 'drag-over-bottom');
+                dragState.dropTarget = { sectionName: row.dataset.sectionName, pairIndex: parseInt(row.dataset.pairIndex), position: 'after' };
+            }
+        } else if (header) {
+            e.preventDefault();
+            header.classList.add('drag-over', 'drag-over-top');
+            dragState.dropTarget = { sectionName: header.dataset.sectionName, pairIndex: 0, position: 'before' };
+        } else if (sep && sep.classList.contains('permanent') && sep.dataset.sectionName) {
+            e.preventDefault();
+            sep.classList.add('drag-over');
+            dragState.dropTarget = { sectionName: sep.dataset.sectionName, pairIndex: 0, position: 'before' };
+        }
+    } else if (dragState.type === 'section') {
+        if (header) {
+            e.preventDefault();
+            const rect = header.getBoundingClientRect();
+            const y = e.clientY - rect.top;
+            if (y < rect.height / 2) {
+                header.classList.add('drag-over', 'drag-over-top');
+                dragState.dropTarget = { targetHeader: header.dataset.sectionName, position: 'before' };
+            } else {
+                header.classList.add('drag-over', 'drag-over-bottom');
+                dragState.dropTarget = { targetHeader: header.dataset.sectionName, position: 'after' };
+            }
+        }
+    }
+}
+
+function handleDragLeave(e) {
+    const target = e.target.closest('.drag-over');
+    if (target) {
+        target.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+    }
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom'));
+
+    if (!dragState || !dragState.dropTarget) {
+        dragState = null;
+        return;
+    }
+
+    if (dragState.type === 'question') {
+        const { sectionName: srcSection, pairIndex: srcIndex } = dragState;
+        const { sectionName: tgtSection, pairIndex: tgtIndex, position } = dragState.dropTarget;
+
+        const srcSectionObj = creatorSections.find(s => s.name === srcSection);
+        if (!srcSectionObj || srcIndex < 0 || srcIndex >= srcSectionObj.qaPairs.length) {
+            dragState = null;
+            return;
+        }
+        const [movedPair] = srcSectionObj.qaPairs.splice(srcIndex, 1);
+
+        let targetIdx = tgtIndex;
+        const tgtSectionObj = creatorSections.find(s => s.name === tgtSection);
+        if (!tgtSectionObj) {
+            dragState = null;
+            return;
+        }
+
+        // Adjust target index if moving within same section and source was before target
+        if (srcSection === tgtSection && srcIndex < tgtIndex) {
+            targetIdx = Math.max(0, tgtIndex - 1);
+        }
+        if (position === 'after') {
+            targetIdx = Math.min(targetIdx + 1, tgtSectionObj.qaPairs.length);
+        }
+
+        tgtSectionObj.qaPairs.splice(targetIdx, 0, movedPair);
+        activeSectionName = tgtSection;
+        updateCurrentSectionDisplay();
+        renderSections();
+    } else if (dragState.type === 'section') {
+        const srcIdx = dragState.sectionIndex;
+        const { targetHeader: tgtSectionName, position } = dragState.dropTarget;
+        const tgtIdx = creatorSections.findIndex(s => s.name === tgtSectionName);
+        if (srcIdx === -1 || tgtIdx === -1 || srcIdx === tgtIdx) {
+            dragState = null;
+            return;
+        }
+        const [movedSection] = creatorSections.splice(srcIdx, 1);
+        let insertIdx = tgtIdx;
+        if (srcIdx < tgtIdx) {
+            insertIdx = tgtIdx - 1; // adjust because we removed one before
+        }
+        if (position === 'after') {
+            insertIdx = Math.min(insertIdx + 1, creatorSections.length);
+        }
+        creatorSections.splice(insertIdx, 0, movedSection);
+        renderSections();
+    }
+
+    dragState = null;
+}
+
+function handleDragEnd(e) {
+    document.querySelectorAll('.dragging, .drag-over, .drag-over-top, .drag-over-bottom').forEach(el => {
+        el.classList.remove('dragging', 'drag-over', 'drag-over-top', 'drag-over-bottom');
+    });
+    dragState = null;
 }
 
 function syncSectionNamesFromInputs() {

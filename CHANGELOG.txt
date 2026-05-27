@@ -6,3 +6,5 @@ Initial Commit
 Modified from the original version by Karsten Wong
 - Fixed bugs relating to question and section insertions with Vocab Mode in script.js
 - Fixed export bugs
+- Added dragging functionality
+- Updated README.md
