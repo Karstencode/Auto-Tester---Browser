@@ -8,3 +8,12 @@ Modified from the original version by Karsten Wong
 - Fixed export bugs
 - Added dragging functionality
 - Updated README.md
+
+2026-05-28
+
+Modified by Karsten Wong
+- Introduced a section control panel to move sections up or down relative to each other
+- Fixed bugs
+- Introduced two delete options for a section 
+    1. Delete along with vocab
+    2. Delete section header and merge vocab to previous section

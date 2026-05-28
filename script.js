@@ -429,6 +429,7 @@ function setupEventListeners() {
     
     // Results
     document.getElementById('restartTest').addEventListener('click', () => {
+        summaryHistory = [];
         selectedSections = [];
         testQuestions = [];
         currentQuestionIndex = 0;
@@ -459,6 +460,17 @@ function setupEventListeners() {
             showScreen('moduleSelect');
         });
     }
+
+    // Section panel toggle
+    const toggleBtn = document.getElementById('toggleSectionPanel');
+    const sectionPanel = document.getElementById('sectionPanel');
+    if (toggleBtn && sectionPanel) {
+        toggleBtn.addEventListener('click', () => {
+            sectionPanel.classList.toggle('hidden');
+            toggleBtn.textContent = sectionPanel.classList.contains('hidden') ? '☰ Sections' : '✕ Sections';
+        });
+    }
+
 }
 
 function uploadCustomModule() {
@@ -489,6 +501,7 @@ function uploadCustomModule() {
 
             sampleModules[moduleName] = data;
             importedModules.add(moduleName);
+            summaryHistory = [];
             currentModule = null;
             currentEditingModuleName = null;
             currentEditingModule = null;
@@ -1180,6 +1193,8 @@ function getDisplaySections() {
 // ============================================
 
 function renderSections() {
+    renderInlineSectionManager();
+
     const container = document.getElementById('sectionsContainer');
     container.innerHTML = '';
     const sectionsToRender = getDisplaySections();
@@ -1214,6 +1229,11 @@ function renderSections() {
             sectionHeaderRow.dataset.dragType = 'section';
         }
 
+        // Find actual section index for reorder buttons
+        const actualIdx = section.reversedOf
+            ? -1
+            : creatorSections.findIndex(s => s.name === section.name);
+
         let sectionTitle;
         if (section.reversedOf) {
             sectionTitle = document.createElement('span');
@@ -1240,16 +1260,59 @@ function renderSections() {
         sectionHeaderRow.appendChild(countBadge);
 
         if (!section.reversedOf) {
-            const removeBtn = document.createElement('button');
-            removeBtn.className = 'btn-remove-section';
-            removeBtn.textContent = '✕';
-            removeBtn.title = 'Remove section';
-            removeBtn.dataset.sectionName = section.name;
-            sectionHeaderRow.appendChild(removeBtn);
+            // Move up
+            const upBtn = document.createElement('button');
+            upBtn.className = 'btn-header-reorder';
+            upBtn.textContent = '▲';
+            upBtn.title = 'Move section up';
+            upBtn.disabled = actualIdx <= 0;
+            upBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (actualIdx > 0) moveSectionUp(actualIdx);
+            });
+            sectionHeaderRow.appendChild(upBtn);
+
+            // Move down
+            const downBtn = document.createElement('button');
+            downBtn.className = 'btn-header-reorder';
+            downBtn.textContent = '▼';
+            downBtn.title = 'Move section down';
+            downBtn.disabled = actualIdx >= creatorSections.length - 1;
+            downBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (actualIdx < creatorSections.length - 1) moveSectionDown(actualIdx);
+            });
+            sectionHeaderRow.appendChild(downBtn);
+        }
+
+        if (!section.reversedOf) {
+            // Merge-delete (existing behavior)
+            const mergeBtn = document.createElement('button');
+            mergeBtn.className = 'btn-header-delete delete-merge';
+            mergeBtn.textContent = '⟳';
+            mergeBtn.title = 'Remove section (merge vocab into previous section)';
+            mergeBtn.dataset.sectionName = section.name;
+            mergeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                removeSection(section.name);
+            });
+            sectionHeaderRow.appendChild(mergeBtn);
+
+            // Delete-all
+            const delBtn = document.createElement('button');
+            delBtn.className = 'btn-header-delete delete-all';
+            delBtn.textContent = '✕';
+            delBtn.title = 'Delete section and all its vocab';
+            delBtn.dataset.sectionName = section.name;
+            delBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteSectionWithVocab(section.name);
+            });
+            sectionHeaderRow.appendChild(delBtn);
         }
 
         sectionHeaderRow.onclick = (e) => {
-            if (e.target.classList.contains('btn-remove-section')) return;
+            if (e.target.closest('button')) return;
             if (e.target.classList.contains('section-name-input')) return;
             if (!section.reversedOf) {
                 activeSectionName = section.name;
@@ -1421,11 +1484,7 @@ function renderSections() {
     container.addEventListener('dragend', handleDragEnd);
 }
 function handleContainerClick(e) {
-    if (e.target.classList.contains('btn-remove-section')) {
-        e.stopPropagation();
-        const sectionName = e.target.dataset.sectionName;
-        removeSection(sectionName);
-    } else if (e.target.classList.contains('btn-vocab-delete')) {
+    if (e.target.classList.contains('btn-vocab-delete')) {
         e.stopPropagation();
         const sectionName = e.target.dataset.sectionName;
         const pairIndex = parseInt(e.target.dataset.pairIndex);
@@ -1454,7 +1513,7 @@ function handleContainerClick(e) {
 // ============================================
 
 function handleDragStart(e) {
-    if (e.target.closest('button, input, select, textarea, .btn-insert-row, .btn-vocab-edit, .btn-vocab-delete, .btn-remove-section')) return;
+    if (e.target.closest('button, input, select, textarea, .btn-insert-row, .btn-vocab-edit, .btn-vocab-delete')) return;
 
     syncSectionNamesFromInputs();
 
@@ -1628,6 +1687,130 @@ function syncSectionNamesFromInputs() {
         if (editingSectionName === oldName) editingSectionName = newName;
         if (qaInsertSection === oldName) qaInsertSection = newName;
     });
+}
+
+// ============================================
+// INLINE SECTION MANAGER
+// ============================================
+
+function renderInlineSectionManager() {
+    const container = document.getElementById('inlineSectionManager');
+    if (!container) return;
+    container.innerHTML = '';
+
+    creatorSections.forEach((section, idx) => {
+        const item = document.createElement('div');
+        item.className = 'ism-v-item' + (section.name === activeSectionName ? ' active-ism-v' : '');
+        item.title = `${section.name} (${section.qaPairs.length} items)`;
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'ism-v-name';
+        nameSpan.textContent = section.name;
+        item.appendChild(nameSpan);
+
+        const countSpan = document.createElement('span');
+        countSpan.className = 'ism-v-count';
+        countSpan.textContent = section.qaPairs.length;
+        item.appendChild(countSpan);
+
+        // Up
+        if (idx > 0) {
+            const upBtn = document.createElement('button');
+            upBtn.className = 'ism-v-btn ism-v-move';
+            upBtn.textContent = '▲';
+            upBtn.title = 'Move up';
+            upBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                moveSectionUp(idx);
+            });
+            item.appendChild(upBtn);
+        }
+
+        // Down
+        if (idx < creatorSections.length - 1) {
+            const downBtn = document.createElement('button');
+            downBtn.className = 'ism-v-btn ism-v-move';
+            downBtn.textContent = '▼';
+            downBtn.title = 'Move down';
+            downBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                moveSectionDown(idx);
+            });
+            item.appendChild(downBtn);
+        }
+
+        // Merge-delete (not for first section)
+        if (idx > 0) {
+            const mergeBtn = document.createElement('button');
+            mergeBtn.className = 'ism-v-btn ism-v-delete-merge';
+            mergeBtn.textContent = '⟳';
+            mergeBtn.title = 'Remove section (merge vocab to previous)';
+            mergeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                removeSection(section.name);
+            });
+            item.appendChild(mergeBtn);
+        }
+
+        // Delete-all
+        const delBtn = document.createElement('button');
+        delBtn.className = 'ism-v-btn ism-v-delete-all';
+        delBtn.textContent = '✕';
+        delBtn.title = 'Delete section and all its vocab';
+        delBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteSectionWithVocab(section.name);
+        });
+        item.appendChild(delBtn);
+
+        // Click on the item to select the section
+        item.addEventListener('click', (e) => {
+            if (e.target.closest('button')) return;
+            activeSectionName = section.name;
+            updateCurrentSectionDisplay();
+            renderSections();
+        });
+
+        container.appendChild(item);
+    });
+}
+
+function moveSectionUp(idx) {
+    if (idx <= 0) return;
+    [creatorSections[idx - 1], creatorSections[idx]] = [creatorSections[idx], creatorSections[idx - 1]];
+    if (activeSectionName === creatorSections[idx].name) {
+        activeSectionName = creatorSections[idx - 1].name;
+    } else if (activeSectionName === creatorSections[idx - 1].name) {
+        activeSectionName = creatorSections[idx].name;
+    }
+    renderSections();
+}
+
+function moveSectionDown(idx) {
+    if (idx >= creatorSections.length - 1) return;
+    [creatorSections[idx], creatorSections[idx + 1]] = [creatorSections[idx + 1], creatorSections[idx]];
+    if (activeSectionName === creatorSections[idx].name) {
+        activeSectionName = creatorSections[idx + 1].name;
+    } else if (activeSectionName === creatorSections[idx + 1].name) {
+        activeSectionName = creatorSections[idx].name;
+    }
+    renderSections();
+}
+
+function deleteSectionWithVocab(sectionName) {
+    const idx = creatorSections.findIndex(s => s.name === sectionName);
+    if (idx === -1) return;
+    if (idx === 0) {
+        alert('Cannot delete the first section.');
+        return;
+    }
+    if (!confirm(`Delete "${sectionName}" and ALL its vocabulary (${creatorSections[idx].qaPairs.length} items)? This cannot be undone.`)) return;
+    creatorSections.splice(idx, 1);
+    if (activeSectionName === sectionName) {
+        activeSectionName = creatorSections.length > 0 ? creatorSections[0].name : null;
+    }
+    updateCurrentSectionDisplay();
+    renderSections();
 }
 
 function buildTestJSON() {
