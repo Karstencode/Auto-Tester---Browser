@@ -759,6 +759,8 @@ function showRedemptionRound() {
     showScreen('results');
     document.getElementById('redemptionContainer').style.display = 'block';
     document.getElementById('finalScore').textContent = score;
+    document.getElementById('summaryStats').textContent = '';
+    document.getElementById('summaryList').innerHTML = '';
     document.getElementById('redemptionMessage').textContent = `You have ${redemptionList.length} question(s) to retry:`;
     
     let redemptionIndex = 0;

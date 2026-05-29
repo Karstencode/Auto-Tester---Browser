@@ -28,8 +28,9 @@ Download `.zip` file from GitHub and extract it to a folder of choice. It is rec
 
 1. Open `index.html` in your web browser (recommend saving this page in preferred browser)
 2. Select a pre-loaded sample module (French, Latin, etc., for testing) or import a `.json` file:
-- Click **Create Test** to build your own and download the file (module) onto the web browser
-- Alternatively, use `quizlet_import.py` to create a file using existing quizlet sets (if you are the owner of the set)
+- Click **Create Test** to build your own and download the file (module)  as a `.json` file
+- Alternatively, use `quizlet_import.py` to create a `.json` file using existing quizlet sets (if you are the owner of the set)
+- You can also paste `sample_module.json` in your generative AI of choice to generate a test based on your requirements in that format, which will be compatible with this online tester.
 3. Click on the test name to open the test
 4. Select sections and configure test settings
 5. Take the quiz and try the redemption round
