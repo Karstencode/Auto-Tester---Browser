@@ -1236,6 +1236,10 @@ function renderSections() {
             ? -1
             : creatorSections.findIndex(s => s.name === section.name);
 
+        if (!section.reversedOf) {
+            sectionHeaderRow.id = 'section-header-' + actualIdx;
+        }
+
         let sectionTitle;
         if (section.reversedOf) {
             sectionTitle = document.createElement('span');
@@ -1765,12 +1769,16 @@ function renderInlineSectionManager() {
         });
         item.appendChild(delBtn);
 
-        // Click on the item to select the section
+        // Click on the item to select the section and jump to it
         item.addEventListener('click', (e) => {
             if (e.target.closest('button')) return;
             activeSectionName = section.name;
             updateCurrentSectionDisplay();
             renderSections();
+            const header = document.getElementById('section-header-' + idx);
+            if (header) {
+                header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         });
 
         container.appendChild(item);

@@ -59,9 +59,19 @@
 
                 <!-- Section Management -->
                 <div class="section-manager">
-                    <h3>Sections & Vocabulary</h3>
-                    <div id="sectionsContainer" class="sections-container">
-                        <!-- Sections and vocab will be rendered as a scrolling list -->
+                    <div class="section-manager-header">
+                        <h3>Sections & Vocabulary</h3>
+                        <button id="toggleSectionPanel" class="btn btn-secondary btn-toggle-panel" title="Toggle section side panel">☰ Sections</button>
+                    </div>
+                    <div class="section-manager-body">
+                        <div id="sectionPanel" class="section-panel">
+                            <div id="inlineSectionManager" class="inline-section-manager-vertical">
+                                <!-- Populated dynamically with section reorder/delete controls -->
+                            </div>
+                        </div>
+                        <div id="sectionsContainer" class="sections-container">
+                            <!-- Sections and vocab will be rendered as a scrolling list -->
+                        </div>
                     </div>
                 </div>
 

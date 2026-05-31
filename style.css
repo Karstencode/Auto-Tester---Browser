@@ -611,11 +611,129 @@ p {
     height: 600px;
 }
 
-.section-manager h3 {
+.section-manager-header h3 {
     color: #333;
-    margin-bottom: 15px;
+    margin: 0;
+    border: none;
+    padding: 0;
+}
+
+.section-manager-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     border-bottom: 2px solid #667eea;
     padding-bottom: 10px;
+}
+
+.btn-toggle-panel {
+    padding: 6px 14px;
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
+.section-manager-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    margin-top: 15px;
+}
+
+.section-panel {
+    width: 200px;
+    flex-shrink: 0;
+    margin-right: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #f9f9f9;
+    overflow-y: auto;
+    transition: width 0.3s ease, opacity 0.3s ease, padding 0.3s ease, margin 0.3s ease, border 0.3s ease;
+}
+
+.section-panel.hidden {
+    width: 0;
+    padding: 0;
+    margin: 0;
+    opacity: 0;
+    border-width: 0;
+    overflow: hidden;
+}
+
+.inline-section-manager-vertical {
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.inline-section-manager-vertical .ism-v-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 8px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.inline-section-manager-vertical .ism-v-item:hover {
+    background: #f0f4ff;
+}
+
+.inline-section-manager-vertical .ism-v-item.active-ism-v {
+    background: #e0e7ff;
+    border-color: #667eea;
+}
+
+.ism-v-item .ism-v-name {
+    flex: 1;
+    font-weight: 500;
+    color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ism-v-item .ism-v-count {
+    background: #667eea;
+    color: white;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-size: 0.75em;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.ism-v-item .ism-v-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0 2px;
+    font-size: 0.85em;
+    line-height: 1;
+    border-radius: 3px;
+    transition: all 0.15s;
+    color: #888;
+    flex-shrink: 0;
+}
+
+.ism-v-item .ism-v-btn:hover {
+    transform: scale(1.2);
+}
+
+.ism-v-item .ism-v-btn.ism-v-move:hover {
+    color: #667eea;
+}
+
+.ism-v-item .ism-v-btn.ism-v-delete-merge:hover {
+    color: #e68a2e;
+}
+
+.ism-v-item .ism-v-btn.ism-v-delete-all:hover {
+    color: #ef4444;
 }
 
 .sections-container {
@@ -669,24 +787,68 @@ p {
     font-weight: 600;
 }
 
-.btn-remove-section {
-    background: #ef4444;
-    color: white;
-    border: none;
-    width: 28px;
-    height: 28px;
+.btn-header-reorder {
+    background: none;
+    border: 1px solid #ccc;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 1.2em;
+    font-size: 0.85em;
+    padding: 2px 6px;
+    color: #555;
+    transition: all 0.2s;
+    line-height: 1;
+}
+
+.btn-header-reorder:hover {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.btn-header-reorder:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.btn-header-reorder:disabled:hover {
+    background: none;
+    color: #555;
+    border-color: #ccc;
+}
+
+.btn-header-delete {
+    background: none;
+    border: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
     padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s ease;
+    transition: all 0.2s;
 }
 
-.btn-remove-section:hover {
-    background: #dc2626;
+.btn-header-delete:hover {
+    transform: scale(1.15);
+}
+
+.btn-header-delete.delete-merge {
+    color: #e68a2e;
+}
+.btn-header-delete.delete-merge:hover {
+    background: #e68a2e;
+    color: white;
+}
+
+.btn-header-delete.delete-all {
+    color: #ef4444;
+}
+.btn-header-delete.delete-all:hover {
+    background: #ef4444;
+    color: white;
 }
 
 .creator-vocab-row {
@@ -752,7 +914,14 @@ p {
     border: 1px solid #ddd;
     font-size: 0.95em;
     color: #333;
-    word-break: break-word;
+    width: 100%;
+    box-sizing: border-box;
+}
+.vocab-question:focus,
+.vocab-answer:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102,126,234,0.2);
 }
 
 .vocab-controls {
@@ -761,30 +930,15 @@ p {
     justify-content: flex-end;
 }
 
-.btn-vocab-edit,
 .btn-vocab-delete {
     padding: 6px 12px;
-    border: 1px solid #ddd;
+    border: 1px solid #ef4444;
     background: white;
+    color: #ef4444;
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.85em;
     transition: all 0.2s ease;
-}
-
-.btn-vocab-edit {
-    color: #667eea;
-    border-color: #667eea;
-}
-
-.btn-vocab-edit:hover {
-    background: #667eea;
-    color: white;
-}
-
-.btn-vocab-delete {
-    color: #ef4444;
-    border-color: #ef4444;
 }
 
 .btn-vocab-delete:hover {
@@ -820,7 +974,7 @@ p {
 .inline-qa-form {
     display: flex;
     gap: 8px;
-    padding: 8px;
+    padding: 8px 12px;
     align-items: center;
     background: #fff;
     border: 1px dashed #ddd;
@@ -834,12 +988,28 @@ p {
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 0.95em;
+    flex: 1;
 }
 
 .btn-inline-save,
 .btn-inline-cancel {
     padding: 8px 10px;
     font-size: 0.9em;
+}
+
+.btn-inline-qa-close {
+    padding: 4px 8px;
+    border: none;
+    background: transparent;
+    color: #999;
+    font-size: 1.1em;
+    cursor: pointer;
+    border-radius: 4px;
+    line-height: 1;
+}
+.btn-inline-qa-close:hover {
+    color: #ef4444;
+    background: #fef2f2;
 }
 
 .current-section-msg {
@@ -900,4 +1070,89 @@ p {
 
 .btn-insert-row > * {
     pointer-events: none;
+}
+
+/* Inline Section Manager */
+.inline-section-manager {
+    background: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    min-height: 36px;
+}
+
+.inline-section-manager .ism-label {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: #666;
+    margin-right: 4px;
+    white-space: nowrap;
+}
+
+.inline-section-manager .ism-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 8px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 16px;
+    font-size: 0.85em;
+    font-weight: 500;
+    color: #333;
+    white-space: nowrap;
+    cursor: default;
+    transition: background 0.2s;
+}
+
+.inline-section-manager .ism-item:hover {
+    background: #f0f4ff;
+}
+
+.inline-section-manager .ism-item.active-ism {
+    background: #e0e7ff;
+    border-color: #667eea;
+}
+
+.ism-item .ism-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0 2px;
+    font-size: 0.85em;
+    line-height: 1;
+    border-radius: 3px;
+    transition: all 0.15s;
+    color: #888;
+}
+
+.ism-item .ism-btn:hover {
+    transform: scale(1.2);
+}
+
+.ism-item .ism-btn.ism-move:hover {
+    color: #667eea;
+}
+
+.ism-item .ism-btn.ism-delete-merge:hover {
+    color: #e68a2e;
+}
+
+.ism-item .ism-btn.ism-delete-all:hover {
+    color: #ef4444;
+}
+
+.ism-item .ism-count {
+    background: #667eea;
+    color: white;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-size: 0.75em;
+    font-weight: 600;
+    margin-left: 2px;
 }
